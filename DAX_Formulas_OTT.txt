@@ -1,0 +1,132 @@
+1. Table Platform:
+
+dim_platform = 
+DATATABLE (
+    "platform", STRING,
+    {
+        { "LioCinema" },
+        { "Jotstar" }
+    }
+)
+
+--------------------------------------------------------------------------------------
+
+2. Device Type:
+
+dim_device_type = 
+DISTINCT (
+    SELECTCOLUMNS(
+        'content_consumption',
+        "device", 'content_consumption'[device_type]
+    )
+)
+
+-----------------------------------------------------------------------------------------
+
+3. Age Group:
+
+dim_age_group = 
+DATATABLE (
+    "age_group", STRING,
+    {
+        {"18-24"},
+        {"25-34"},
+        {"35-44"},
+        {"45-54"},
+        {"55+"}
+    }
+)
+
+-----------------------------------------------------------------------------------------
+
+4. City Tier:
+
+dim_city = 
+DISTINCT (
+    SELECTCOLUMNS(
+        'subscribers',
+        "city_tier", 'subscribers'[city_tier]
+    )
+)
+
+------------------------------------------------------------------------------------------
+
+5. Date:
+
+dim_date = 
+ADDCOLUMNS (
+    CALENDAR (DATE(2024, 1, 1), DATE(2024, 11, 30)),
+    "Year", YEAR([Date]),
+    "Month", FORMAT([Date], "MMMM"),
+    "MonthNum", MONTH([Date]),
+    "Quarter", "Q" & FORMAT([Date], "Q"),
+    "Weekday", FORMAT([Date], "dddd"),
+    "WeekdayNum", WEEKDAY([Date], 2)  -- Monday = 1, Sunday = 7
+)
+
+--------------------------------------------------------------------------------------------
+
+KPI Measures:
+-----------------
+
+Formatting: 1. format your visual --> Category label (off) --> General --> Title (on) enter text field, adjust size, divider --> Effects (background color, border color etc) for one visual then copy and paste.
+
+1. Total Content Items
+Total Content Items = CALCULATE(DISTINCTCOUNT(contents[content_id]))
+
+*******************
+
+2. Total users
+Total users = CALCULATE(DISTINCTCOUNT(subscribers[user_id]))
+
+*********************
+
+3. Paid User Count
+Paid Users Count = CALCULATE(DISTINCTCOUNT('subscribers'[user_id]), FILTER('subscribers', COALESCE('subscribers'[new_subscription_plan], 'subscribers'[subscription_plan]) IN { "Basic", "VIP", "Premium" }))
+
+
+*********************
+
+4. paid user % 
+
+paid user % = [Paid Users Count]/[Total users]  (Show then how to convert into % --> select on measure --> In formatting tab --> select %)
+
+*************************
+Adding New cloumn to subscriber table:
+
+UserStatus = 
+SWITCH(
+    TRUE(),
+    ISBLANK('subscribers'[last_active_date]), "Active",
+    'subscribers'[last_active_date] < TODAY() - 30, "Inactive"
+)
+
+
+5. Active User Count
+
+Active User Count =
+CALCULATE(
+    DISTINCTCOUNT(subscribers[user_id]),
+    subscribers[UserStatus] = "Active"
+)
+
+
+*****************************
+
+6. Inactive User Count
+
+Inactive User Count = 
+CALCULATE(
+    DISTINCTCOUNT(subscribers[user_id]),
+    subscribers[UserStatus] = "Inactive"
+)
+
+
+***********************************
+
+
+
+
+
+
+
